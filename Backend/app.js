@@ -1,8 +1,12 @@
 const express = require('express');
+const { questionRouter } = require('./routes/questionRoutes');
 const app = express();
 require('dotenv').config();
 
 app.use(express.json());
+
+// routes
+app.use('/questions', questionRouter);
 
 app.get('/', (req, res)=>{
     res.send('AI Interview Assistant');
