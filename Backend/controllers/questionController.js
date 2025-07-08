@@ -1,8 +1,10 @@
 const { callGeminiAPI } = require("../utils/geminiClient");
+const {formatGeminiResponse} = require("../utils/geminiFormat");
 
 // Create Question Route
 const generateQuestion = async (req, res)=>{
     try {
+        console.log("Hello nw")
         const { role, experience, topics } = req.body;
 
         if(!role || !experience){
@@ -18,8 +20,11 @@ const generateQuestion = async (req, res)=>{
         `;
 
         const questions = await callGeminiAPI(prompt);
+        console.log("Raw Gemini Response:\n", questions)
 
-        res.status(200).json({ questions });
+        const formattedResponse = formatGeminiResponse(questions);
+
+        res.status(200).json({ questions: formattedResponse });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: 'Failed to Generate Questions' });
