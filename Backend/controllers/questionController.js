@@ -4,6 +4,8 @@ const {formatGeminiResponse} = require("../utils/geminiFormat");
 // Ask question from AI
 const askAI = async (req, res)=>{
     try {
+        console.log("Request body:", req.body);
+
         const { message } = req.body;
 
         if(!message){

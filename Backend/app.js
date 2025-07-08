@@ -1,7 +1,11 @@
 const express = require('express');
 const { questionRouter } = require('./routes/questionRoutes');
+const cors = require("cors");
 const app = express();
 require('dotenv').config();
+
+// cors
+app.use(cors());
 
 app.use(express.json());
 
