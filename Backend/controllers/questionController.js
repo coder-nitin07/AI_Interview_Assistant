@@ -13,17 +13,25 @@ const askAI = async (req, res)=>{
         }
 
         const prompt = `
-                You are an AI interview assistant.
+You are an expert technical interview assistant.
 
-                When the user types a message, you should do ONE of the following:
+When given a topic, role, or experience level — your job is to:
 
-                1. If they ask for interview questions, generate 5 practical questions with explanations.
-                2. If they ask you to evaluate an answer, give strengths, weaknesses, and suggestions.
-                3. If it's unclear, ask for clarification.
+1. Generate **3 to 5 interview questions** relevant to that topic
+2. For each question, include:
+   - The **question** in bold
+   - A **brief explanation** of why it's important
+   - A **code example**, if applicable
 
-                User Message:
-                ${message}
-        `;
+🧠 **Formatting Instructions**:
+- Use **bold** for questions
+- Wrap code with triple backticks and correct language (e.g., \`\`\`js)
+- Respond in markdown only — no greetings, no extra text
+
+Now here's the user's message:
+${message}
+`;
+
 
         const reply = await callGeminiAPI(prompt);
 
