@@ -1,34 +1,35 @@
 const { callGeminiAPI } = require("../utils/geminiClient");
 const {formatGeminiResponse} = require("../utils/geminiFormat");
 
-// Create Question Route
-const generateQuestion = async (req, res)=>{
+// Ask question from AI
+const askAI = async (req, res)=>{
     try {
-        console.log("Hello nw")
-        const { role, experience, topics } = req.body;
+        const { message } = req.body;
 
-        if(!role || !experience){
-            return res.status(400).json({ message: 'Role and Experience are required' });
+        if(!message){
+            return res.status(400).json({ message: 'message is required' });
         }
 
         const prompt = `
-            You are a senior technical interviewer.
+                You are an AI interview assistant.
 
-            Generate 5 practical interview questions for a ${role} with ${experience} of experience.
-            ${topics && topics.length > 0 ? `Focus on these topics: ${topics.join(', ')}` : ''}
-            For each question, add a brief explanation of why it’s important.
+                When the user types a message, you should do ONE of the following:
+
+                1. If they ask for interview questions, generate 5 practical questions with explanations.
+                2. If they ask you to evaluate an answer, give strengths, weaknesses, and suggestions.
+                3. If it's unclear, ask for clarification.
+
+                User Message:
+                ${message}
         `;
 
-        const questions = await callGeminiAPI(prompt);
-        console.log("Raw Gemini Response:\n", questions)
+        const reply = await callGeminiAPI(prompt);
 
-        const formattedResponse = formatGeminiResponse(questions);
-
-        res.status(200).json({ questions: formattedResponse });
+        res.status(200).json({ reply });
     } catch (err) {
         console.log(err);
-        res.status(500).json({ message: 'Failed to Generate Questions' });
-    }
+        res.status(500).json({ message: 'Failed to Process AI request' });
+    }    
 };
 
-module.exports = { generateQuestion };
+module.exports = { askAI };
