@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 function TypingCode({ language, code, animate, onComplete }) {
   const [displayedCode, setDisplayedCode] = useState("");
   const [isComplete, setIsComplete] = useState(false);
+  
 
   useEffect(() => {
     if (!animate) {
@@ -100,6 +101,8 @@ function CodePreview({ blocks }) {
 
 export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypingCode }) {
   const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState("code");
+  const [hasTypedOnce, setHasTypedOnce] = useState(false);
   const [visibleBlocks, setVisibleBlocks] = useState([]);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   
@@ -112,21 +115,21 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
   ).filter(Boolean);
 
   // ✅ Reset when new code blocks arrive
-  useEffect(() => {
-    if (codeBlocks.length > 0 && !isLoading) {
-      setVisibleBlocks([]);
-      setCurrentBlockIndex(0);
-      setShowPreview(false);
-      
-      // Start showing the first block
-      setTimeout(() => {
-        if (sortedCodeBlocks.length > 0) {
-          setVisibleBlocks([sortedCodeBlocks[0]]);
-          setIsTypingCode(true);
-        }
-      }, 500); // Small delay before starting
-    }
-  }, [codeBlocks, isLoading]);
+ useEffect(() => {
+  if (codeBlocks.length > 0 && !isLoading) {
+    setVisibleBlocks([]);
+    setCurrentBlockIndex(0);
+    setShowPreview(false);
+    setHasTypedOnce(false); // Reset
+
+    setTimeout(() => {
+      if (sortedCodeBlocks.length > 0) {
+        setVisibleBlocks([sortedCodeBlocks[0]]);
+        setIsTypingCode(true);
+      }
+    }, 500);
+  }
+}, [codeBlocks, isLoading]);
 
   
 
@@ -143,6 +146,7 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
   } else {
     // ✅ All blocks are done – stop typing
     setIsTypingCode(false);
+    setHasTypedOnce(true); // ✅ Mark typing as completed
   }
   };
 
@@ -168,27 +172,45 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
       )}
 
       {/* ✅ Show Preview Button - only when all blocks are complete */}
-      {canShowPreview && (
-        <div className="mb-4">
-          <button
-            onClick={() => setShowPreview(!showPreview)}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-          >
-            {showPreview ? "Hide Preview" : "Show Preview"}
-          </button>
-        </div>
-      )}
+      <div className="mb-4 flex border-b border-gray-700">
+  <button
+    className={`px-4 py-2 text-sm font-medium ${
+      activeTab === "code"
+        ? "border-b-2 border-blue-500 text-white"
+        : "text-gray-400"
+    }`}
+    onClick={() => setActiveTab("code")}
+  >
+    Code
+  </button>
+  <button
+  className={`ml-2 px-4 py-2 text-sm font-medium ${
+    activeTab === "preview"
+      ? "border-b-2 border-blue-500 text-white"
+      : "text-gray-400"
+  } disabled:opacity-50 disabled:cursor-not-allowed`}
+  onClick={() => setActiveTab("preview")}
+  disabled={!canShowPreview}
+>
+  Preview
+</button>
+</div>
+
 
       {/* ✅ Sequential code blocks */}
-      {visibleBlocks.map((block, index) => (
-        <TypingCode
-          key={block.language + index}
-          language={block.language}
-          code={block.code}
-          animate={true}
-          onComplete={index === visibleBlocks.length - 1 ? handleBlockComplete : undefined}
-        />
-      ))}
+    {activeTab === "code" && visibleBlocks.map((block, index) => (
+  <TypingCode
+  key={block.language}
+  language={block.language}
+  code={block.code}
+  animate={!hasTypedOnce} // ✅ Animate only first time
+  onComplete={index === visibleBlocks.length - 1 ? handleBlockComplete : undefined}
+/>
+))}
+
+{activeTab === "preview" && canShowPreview && (
+  <CodePreview blocks={sortedCodeBlocks} />
+)}
 
       {/* ✅ Show preview in sidebar when button is clicked */}
       {showPreview && canShowPreview && (
