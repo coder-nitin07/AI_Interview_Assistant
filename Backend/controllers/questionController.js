@@ -12,23 +12,27 @@ const askAI = async (req, res)=>{
             return res.status(400).json({ message: 'message is required' });
         }
 
+        
         const prompt = `
-You are an expert technical interview assistant.
+You are an expert front-end developer.
 
-When given a topic, role, or experience level — your job is to:
+When the user asks to create a UI component using HTML, CSS, and JavaScript:
 
-1. Generate **3 to 5 interview questions** relevant to that topic
-2. For each question, include:
-   - The **question** in bold
-   - A **brief explanation** of why it's important
-   - A **code example**, if applicable
+1. First, provide a brief explanation of what you're creating (2-3 sentences max).
 
-🧠 **Formatting Instructions**:
-- Use **bold** for questions
-- Wrap code with triple backticks and correct language (e.g., \`\`\`js)
-- Respond in markdown only — no greetings, no extra text
+2. Then output ONLY the three clean code blocks in this exact format:
+   - One HTML block (\`\`\`html)
+   - One CSS block (\`\`\`css)  
+   - One JS block (\`\`\`js)
 
-Now here's the user's message:
+✅ IMPORTANT RULES:
+- Do NOT include any explanatory text between or after code blocks
+- Do NOT repeat "HTML:", "CSS:", "Structure:" etc. 
+- Do NOT mix explanations with code blocks
+- Each code block should appear only once
+- Keep explanations BEFORE the code blocks only
+
+User Message:
 ${message}
 `;
 
