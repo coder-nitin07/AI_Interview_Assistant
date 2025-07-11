@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 function TypingCode({ language, code, animate, onComplete }) {
   const [displayedCode, setDisplayedCode] = useState("");
   const [isComplete, setIsComplete] = useState(false);
-  
 
   useEffect(() => {
     if (!animate) {
@@ -14,15 +13,13 @@ function TypingCode({ language, code, animate, onComplete }) {
       return;
     }
 
-    // If the new code is shorter than what's displayed, just snap to the new code
     if (code.length < displayedCode.length) {
-        setDisplayedCode(code);
-        setIsComplete(true);
-        if (onComplete) onComplete();
-        return;
+      setDisplayedCode(code);
+      setIsComplete(true);
+      if (onComplete) onComplete();
+      return;
     }
 
-    // Start typing from where we left off
     let i = displayedCode.length;
     const interval = setInterval(() => {
       if (i >= code.length) {
@@ -33,7 +30,7 @@ function TypingCode({ language, code, animate, onComplete }) {
       }
       setDisplayedCode(code.slice(0, i + 1));
       i++;
-    }, 10); // Typing speed
+    }, 10);
 
     return () => clearInterval(interval);
   }, [code, animate, onComplete]);
@@ -43,9 +40,7 @@ function TypingCode({ language, code, animate, onComplete }) {
       <div className="text-xs text-gray-400 mb-1 uppercase flex justify-between items-center">
         {language}
         <div className="flex items-center gap-2">
-          {isComplete && (
-            <span className="text-green-400 text-xs">✓ Complete</span>
-          )}
+          {isComplete && <span className="text-green-400 text-xs">✓ Complete</span>}
           <button
             onClick={() => navigator.clipboard.writeText(code)}
             className="text-xs text-gray-400 hover:text-white"
@@ -61,7 +56,7 @@ function TypingCode({ language, code, animate, onComplete }) {
   );
 }
 
-// Preview component that will be shown in sidebar
+// Live preview iframe
 function CodePreview({ blocks }) {
   const iframeRef = useRef();
 
@@ -72,9 +67,7 @@ function CodePreview({ blocks }) {
 
     const combined = `
       <html>
-        <head>
-          <style>${css}</style>
-        </head>
+        <head><style>${css}</style></head>
         <body>
           ${html}
           <script>${js}</script>
@@ -105,55 +98,73 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
   const [hasTypedOnce, setHasTypedOnce] = useState(false);
   const [visibleBlocks, setVisibleBlocks] = useState([]);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
-  
-  // ✅ Define the order of code blocks
-  const blockOrder = ['html', 'css', 'js'];
-  
-  // ✅ Sort code blocks according to the desired order
-  const sortedCodeBlocks = blockOrder.map(lang => 
-    codeBlocks.find(block => block.language === lang)
-  ).filter(Boolean);
 
-  // ✅ Reset when new code blocks arrive
- useEffect(() => {
-  if (codeBlocks.length > 0 && !isLoading) {
-    setVisibleBlocks([]);
-    setCurrentBlockIndex(0);
-    setShowPreview(false);
-    setHasTypedOnce(false); // Reset
+  const blockOrder = ["html", "css", "js"];
+  const sortedCodeBlocks = blockOrder
+    .map((lang) => codeBlocks.find((block) => block.language === lang))
+    .filter(Boolean);
 
-    setTimeout(() => {
-      if (sortedCodeBlocks.length > 0) {
-        setVisibleBlocks([sortedCodeBlocks[0]]);
-        setIsTypingCode(true);
-      }
-    }, 500);
-  }
-}, [codeBlocks, isLoading]);
+  useEffect(() => {
+    if (codeBlocks.length > 0 && !isLoading) {
+      setVisibleBlocks([]);
+      setCurrentBlockIndex(0);
+      setShowPreview(false);
+      setHasTypedOnce(false);
 
-  
+      setTimeout(() => {
+        if (sortedCodeBlocks.length > 0) {
+          setVisibleBlocks([sortedCodeBlocks[0]]);
+          setIsTypingCode(true);
+        }
+      }, 500);
+    }
+  }, [codeBlocks, isLoading]);
 
-  // ✅ Handle completion of current block and show next one
   const handleBlockComplete = () => {
-  const nextIndex = currentBlockIndex + 1;
-
-  if (nextIndex < sortedCodeBlocks.length) {
-    // Add the next block after a short delay
-    setTimeout(() => {
-      setVisibleBlocks(prev => [...prev, sortedCodeBlocks[nextIndex]]);
-      setCurrentBlockIndex(nextIndex);
-    }, 300);
-  } else {
-    // ✅ All blocks are done – stop typing
-    setIsTypingCode(false);
-    setHasTypedOnce(true); // ✅ Mark typing as completed
-  }
+    const nextIndex = currentBlockIndex + 1;
+    if (nextIndex < sortedCodeBlocks.length) {
+      setTimeout(() => {
+        setVisibleBlocks((prev) => [...prev, sortedCodeBlocks[nextIndex]]);
+        setCurrentBlockIndex(nextIndex);
+      }, 300);
+    } else {
+      setIsTypingCode(false);
+      setHasTypedOnce(true);
+    }
   };
 
-
-  // ✅ Only show preview button when all blocks are complete
-  const allBlocksComplete = visibleBlocks.length === sortedCodeBlocks.length && sortedCodeBlocks.length > 0;
+  const allBlocksComplete =
+    visibleBlocks.length === sortedCodeBlocks.length && sortedCodeBlocks.length > 0;
   const canShowPreview = !isLoading && allBlocksComplete;
+
+  // ✅ Moved here to access sortedCodeBlocks
+  const handleShare = async () => {
+    const html = sortedCodeBlocks.find((b) => b.language === "html")?.code || "";
+    const css = sortedCodeBlocks.find((b) => b.language === "css")?.code || "";
+    const js = sortedCodeBlocks.find((b) => b.language === "js")?.code || "";
+
+    try {
+      const res = await fetch("http://localhost:3000/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, css, js }),
+      });
+
+      const data = await res.json();
+     if (data.previewUrl) {
+  const parts = data.previewUrl.split('/');
+  const previewId = parts[parts.length - 1]; // ✅ Extract UUID from the URL
+
+  const uiPreviewUrl = `http://localhost:5173/preview-ui/${previewId}`; // ✅ Use previewId
+
+  await navigator.clipboard.writeText(uiPreviewUrl);
+  alert("✅ Preview link copied to clipboard:\n" + uiPreviewUrl);
+}
+}catch (err) {
+      console.error("Error sharing preview:", err);
+      alert("Something went wrong.");
+    }
+  };
 
   return (
     <div className="w-full h-full bg-gray-900 text-white overflow-y-auto p-4 border-l border-gray-800">
@@ -164,60 +175,53 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
         </button>
       </div>
 
-      {/* ✅ Progress indicator */}
       {sortedCodeBlocks.length > 0 && (
         <div className="mb-4 text-xs text-gray-400">
           Progress: {visibleBlocks.length} / {sortedCodeBlocks.length} blocks
         </div>
       )}
 
-      {/* ✅ Show Preview Button - only when all blocks are complete */}
-      <div className="mb-4 flex border-b border-gray-700">
-  <button
-    className={`px-4 py-2 text-sm font-medium ${
-      activeTab === "code"
-        ? "border-b-2 border-blue-500 text-white"
-        : "text-gray-400"
-    }`}
-    onClick={() => setActiveTab("code")}
-  >
-    Code
-  </button>
-  <button
-  className={`ml-2 px-4 py-2 text-sm font-medium ${
-    activeTab === "preview"
-      ? "border-b-2 border-blue-500 text-white"
-      : "text-gray-400"
-  } disabled:opacity-50 disabled:cursor-not-allowed`}
-  onClick={() => setActiveTab("preview")}
-  disabled={!canShowPreview}
->
-  Preview
-</button>
-</div>
+      <div className="mb-4 flex items-center gap-2 border-b border-gray-700 pb-2">
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "code" ? "border-b-2 border-blue-500 text-white" : "text-gray-400"
+          }`}
+          onClick={() => setActiveTab("code")}
+        >
+          Code
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "preview" ? "border-b-2 border-blue-500 text-white" : "text-gray-400"
+          }`}
+          onClick={() => setActiveTab("preview")}
+          disabled={!canShowPreview}
+        >
+          Preview
+        </button>
+        {canShowPreview && (
+          <button
+            onClick={handleShare}
+            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+          >
+            🔗 Share Preview
+          </button>
+        )}
+      </div>
 
+      {activeTab === "code" &&
+        visibleBlocks.map((block, index) => (
+          <TypingCode
+            key={block.language}
+            language={block.language}
+            code={block.code}
+            animate={!hasTypedOnce}
+            onComplete={index === visibleBlocks.length - 1 ? handleBlockComplete : undefined}
+          />
+        ))}
 
-      {/* ✅ Sequential code blocks */}
-    {activeTab === "code" && visibleBlocks.map((block, index) => (
-  <TypingCode
-  key={block.language}
-  language={block.language}
-  code={block.code}
-  animate={!hasTypedOnce} // ✅ Animate only first time
-  onComplete={index === visibleBlocks.length - 1 ? handleBlockComplete : undefined}
-/>
-))}
+      {activeTab === "preview" && canShowPreview && <CodePreview blocks={sortedCodeBlocks} />}
 
-{activeTab === "preview" && canShowPreview && (
-  <CodePreview blocks={sortedCodeBlocks} />
-)}
-
-      {/* ✅ Show preview in sidebar when button is clicked */}
-      {showPreview && canShowPreview && (
-        <CodePreview blocks={sortedCodeBlocks} />
-      )}
-
-      {/* ✅ Loading indicator */}
       {isLoading && (
         <div className="text-center text-gray-400 mt-4">
           <div className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
@@ -225,14 +229,15 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
         </div>
       )}
 
-      {/* ✅ Waiting for next block indicator */}
-      {!isLoading && visibleBlocks.length < sortedCodeBlocks.length && visibleBlocks.length > 0 && (
-        <div className="text-center text-gray-400 mt-4">
-          <div className="animate-pulse">
-            Preparing {blockOrder[visibleBlocks.length]}...
+      {!isLoading &&
+        visibleBlocks.length < sortedCodeBlocks.length &&
+        visibleBlocks.length > 0 && (
+          <div className="text-center text-gray-400 mt-4">
+            <div className="animate-pulse">
+              Preparing {blockOrder[visibleBlocks.length]}...
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
