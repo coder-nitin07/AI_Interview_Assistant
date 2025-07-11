@@ -90,16 +90,16 @@ export default function AssistantPage() {
         </div>
 
         {/* RIGHT: SidebarCode (only when open) */}
-        {isSidebarOpen && finalCodeBlocks.length > 0 && (
-          <div className="w-[40%] h-full overflow-y-auto">
-            <SidebarCode
-              codeBlocks={finalCodeBlocks}
-              onClose={() => setIsSidebarOpen(false)}
-              isLoading={isLoading}
-              setIsTypingCode={setIsTypingCode} 
-            />
-          </div>
-        )}
+        {isSidebarOpen && (
+  <div className="w-[40%] h-full overflow-y-auto">
+    <SidebarCode
+      codeBlocks={finalCodeBlocks}
+      onClose={() => setIsSidebarOpen(false)}
+      isLoading={isLoading}
+      setIsTypingCode={setIsTypingCode}
+    />
+  </div>
+)}
       </div>
     </div>
   );

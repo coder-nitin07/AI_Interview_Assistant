@@ -220,6 +220,15 @@ export default function SidebarCode({ codeBlocks, onClose, isLoading, setIsTypin
           />
         ))}
 
+        {activeTab === "code" &&
+  visibleBlocks.length === 0 &&
+  isLoading && (
+    <div className="text-gray-400 mt-4 text-center">
+      <div className="animate-pulse text-sm">⏳ Generating code, please wait...</div>
+    </div>
+  )}
+
+
       {activeTab === "preview" && canShowPreview && <CodePreview blocks={sortedCodeBlocks} />}
 
       {isLoading && (
