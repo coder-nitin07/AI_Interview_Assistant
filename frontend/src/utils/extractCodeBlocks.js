@@ -33,3 +33,11 @@ export const removeCodeBlocks = (markdownText) => {
     .replace(/\n\s*\n\s*\n/g, "\n\n")
     .trim();
 };
+
+export function extractSummaryBeforeCodeBlocks(text, fallback = "") {
+  const codeStart = text.indexOf("```");
+  if (codeStart === -1) return text.trim();
+  
+  const summary = text.slice(0, codeStart).trim();
+  return summary || fallback; // use fallback if summary is empty
+}

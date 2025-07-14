@@ -13,50 +13,47 @@ const askAI = async (req, res)=>{
         }
 
        const prompt = `
-You are a world-class UI/UX designer and expert front-end developer. Your primary goal is to create a visually stunning, modern, and engaging single-page website that is fully responsive.
+You are an expert front-end developer.
 
-🎨 Design Philosophy (Follow this carefully):
--   **Modern & Clean:** The design must feel current and professional. Use ample white space, clean lines, and a cohesive layout.
--   **Visually Engaging:** Do not just create simple text sections. Use layouts, cards, icons, and typography to make each section interesting.
--   **Color & Gradient:** Use a beautiful, cohesive color palette defined in CSS variables. Use linear gradients for backgrounds or key elements to add depth and visual appeal.
--   **Interactivity:** Add subtle hover effects (e.g., slight lift, color change, shadow) to buttons, links, and cards to make the page feel alive.
--   **Typography:** Use a clean, readable font (from Google Fonts or a standard web-safe font). Establish a clear visual hierarchy with different font sizes and weights.
+Your job is to generate a fully responsive single-page website based on the user's request using only **vanilla HTML, CSS, and JS**.
 
-📄 Detailed Section Requirements:
-1.  **Header:** A sticky header containing a creative logo (emoji + text) and navigation.
-2.  **Hero Section:** A captivating, full-height or large hero section. It must have:
-    -   A large, bold headline.
-    -   A compelling subheading that explains value or creates interest.
-    -   A prominent call-to-action (CTA) button with an eye-catching style (e.g., gradient background, slight shadow).
-3.  **Features/Services Section:**
-    -   Display 3-4 features in a responsive grid or flexbox layout.
-    -   Each feature must be a "card" with a border, box-shadow, and padding.
-    -   Each card must contain an icon (emoji or inline SVG), a feature title, and a short descriptive paragraph.
-4.  **"About Us" or "Showcase" Section:**
-    -   Create an engaging section with a two-column layout on desktop (stacking on mobile).
-    -   One column for a heading and descriptive text.
-    -   The other column can feature a stylized element, like a large quote block or a list of key points with checkmark icons (✅).
-5.  **Footer:**
-    -   A clean and organized multi-section footer.
-    -   Include columns for "Quick Links," "Contact Info," and mock "Social Media" links (using emojis as icons: 🐦, 💼, 깃허브).
-    -   End with a centered copyright notice.
+⚠️ IMPORTANT INSTRUCTIONS:
+- Start with a short summary (4-5 sentences) describing what the webpage does.
+- Make the design fully responsive using CSS media queries or flexible layouts (e.g., Flexbox, Grid).
+- The layout should work on desktop and mobile.
+- Focus on the Header and Header should be attractive and on the mobile screen the nav-link will be hidden and the hambuger menu show and when the User click on the icon the nav-links close and open, handle this with the help of JS and CSS.
+- After the Header Create an Hero Section with the Some text with no Image and but in Background fill with the Background color and with the One Heading and 2 lines about the website.
+_ After the Hero Section, Create a section for Cards and fill the cards with the data and the data about related to the website. Create only three cards.
+- Then create footer.
+- The Website should be full responsive and Choose good colors for the Website.
+- Then output code blocks using triple backticks (\`\`\`html, \`\`\`css, \`\`\`js).
+- HTML must be in one code block labeled \`\`\`html
+- CSS must be in one code block labeled \`\`\`css
+- JS must be in one code block labeled \`\`\`js
+- Do NOT include explanations after the code blocks.
 
-⚙️ Core Functionality Requirements (Strict):
--   **Sticky Header:** Must use \`position: sticky; top: 0;\` and \`display: flex; justify-content: space-between; align-items: center;\`.
--   **Smooth Scrolling:** The rule \`html { scroll-behavior: smooth; }\` is mandatory. Anchor links must work perfectly.
--   **Mobile Menu:** Implement a hamburger menu that toggles an \`.active\` class on the navigation element using minimal JavaScript. The CSS must handle the show/hide logic based on this class.
+✅ Sample Output Format:
 
-✅ Output Format:
-Your response must be structured into three distinct markdown code blocks. Do not add any text or explanation outside of these blocks.
+This is a responsive landing page for a digital agency with a mobile-friendly navigation menu.
 
--   First block: \`\`\`html\`\`\` (with semantic tags and all required IDs and classes)
--   Second block: \`\`\`css\`\`\` (with CSS variables, all styles, responsive media queries, and hover effects)
--   Third block: \`\`\`javascript\`\`\` (with only the minimal hamburger toggle code)
+\`\`\`html
+<!-- html code here -->
+\`\`\`
+
+\`\`\`css
+/* css here */
+\`\`\`
+
+\`\`\`js
+// only if needed
+\`\`\`
 
 ---
-Now generate a responsive landing page for this topic:
-"${message}"
+
+User Request: ${message}
 `;
+  
+
 
         const reply = await callGeminiAPI(prompt);
 

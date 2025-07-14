@@ -1,6 +1,6 @@
 import { useState } from "react";
 import SidebarCode from "../components/SidebarCode";
-import { extractCodeBlocksWithLang, removeCodeBlocks } from "../utils/extractCodeBlocks";
+import { extractCodeBlocksWithLang, removeCodeBlocks, extractSummaryBeforeCodeBlocks } from "../utils/extractCodeBlocks";
 
 export default function AssistantPage() {
   const [prompt, setPrompt] = useState("");
@@ -15,10 +15,13 @@ export default function AssistantPage() {
     e.preventDefault();
     if (!prompt.trim() || isLoading) return;
 
+    // ✨ FIX 1: CRUCIAL - Reset all relevant state for the new request.
+    // This prevents the button from showing based on the *previous* request's data.
+    setFinalCodeBlocks([]);
+    setFullResponse("");
     setSubmittedPrompt(prompt);
     setIsLoading(true);
     setIsSidebarOpen(true);
-    setFullResponse("");
 
     try {
       const response = await fetch("http://localhost:3000/questions/ask", {
@@ -28,17 +31,77 @@ export default function AssistantPage() {
       });
 
       const data = await response.json();
+
+      // Set the state based on the new response
       setFullResponse(data.reply);
-      setFinalCodeBlocks(extractCodeBlocksWithLang(data.reply));
+      const extracted = extractCodeBlocksWithLang(data.reply);
+      setFinalCodeBlocks(extracted);
+
+      // --- We no longer need to manually set a 'ready' flag here ---
+
     } catch (err) {
+      console.error("Failed to get response:", err);
       setFullResponse("❌ Failed to get a response.");
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // ✨ FIX 2: DERIVED STATE - This is the key.
+  // This constant is recalculated on every render. It's always in sync.
+  // The button should only show if:
+  // 1. We are NOT loading.
+  // 2. A prompt has been submitted (so it doesn't show on initial page load).
+  // 3. The final code blocks contain both 'html' AND 'css'.
+  const isDownloadReady =
+    !isLoading &&
+    submittedPrompt &&
+    finalCodeBlocks.some((block) => block.language === "html") &&
+    finalCodeBlocks.some((block) => block.language === "css");
 
-  const textOnly = removeCodeBlocks(fullResponse);
 
+  const handleDownload = async () => {
+    // ... your handleDownload function remains the same, it's correct.
+    try {
+        const htmlBlock = finalCodeBlocks.find((block) => block.language === "html")?.code || "";
+        const cssBlock = finalCodeBlocks.find((block) => block.language === "css")?.code || "";
+        const jsBlock = finalCodeBlocks.find((block) => block.language === "js")?.code || "";
+
+        if (!htmlBlock || !cssBlock) {
+        alert("HTML and CSS are required to download.");
+        return;
+        }
+
+        const response = await fetch("http://localhost:3000/download/generate-zip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            html: htmlBlock,
+            css: cssBlock,
+            js: jsBlock,
+        }),
+        });
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "webpage.zip";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("Download failed:", error);
+        alert("Failed to download code.");
+    }
+  };
+
+  const textOnly = extractSummaryBeforeCodeBlocks(fullResponse, `You asked: "${submittedPrompt}"`);
+
+console.log("FULL RESPONSE:", fullResponse);
+console.log("TEXT ONLY:", textOnly);
   return (
     <div className="h-screen w-full bg-[#0e0e10] text-white flex flex-col font-sans">
       {/* Header */}
@@ -49,6 +112,7 @@ export default function AssistantPage() {
         <button
           onClick={() => {
             setPrompt("");
+            setSubmittedPrompt(""); // Also clear the submitted prompt
             setFullResponse("");
             setIsSidebarOpen(false);
             setFinalCodeBlocks([]);
@@ -67,36 +131,37 @@ export default function AssistantPage() {
             isSidebarOpen ? "w-[60%]" : "w-full"
           } h-full flex flex-col border-r border-gray-800`}
         >
-          {/* AI Response */}
+          {/* ... your response and landing screen JSX ... */}
+           {/* AI Response */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {textOnly ? (
+            {fullResponse && (
   <div className="bg-[#1a1a1c] rounded-lg p-5 shadow-md border border-gray-700">
     <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-sm">
-      {textOnly}
+      {textOnly || "⚠️ No summary available. Only code was generated."}
     </p>
   </div>
-) : (
-  <div className="flex flex-col items-center justify-center text-center text-gray-400 mt-12">
-    <div className="mb-6">
-      <h2 className="text-3xl font-bold text-white mb-2">🚀 Build Stunning Webpages with AI</h2>
-      <p className="text-lg text-gray-400 max-w-xl mx-auto">
-        Generate complete responsive webpages using just a prompt. No images, just smart layouts, vibrant colors, and clean code.
-      </p>
-    </div>
-
-    <div className="mt-8">
-      <p className="text-md font-semibold text-gray-300 mb-2">Try asking things like:</p>
-      <ul className="space-y-2 text-sm text-gray-400">
-        <li>👉 Create a personal portfolio landing page</li>
-        <li>👉 Design a responsive pricing table with 3 plans</li>
-        <li>👉 Build a contact form with clean layout</li>
-        <li>👉 Create a digital agency one-page website</li>
-      </ul>
-    </div>
-  </div>
 )}
+            {!fullResponse && !isLoading && (
+                <div className="flex flex-col items-center justify-center text-center text-gray-400 mt-12">
+                <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-white mb-2">🚀 Build Stunning Webpages with AI</h2>
+                    <p className="text-lg text-gray-400 max-w-xl mx-auto">
+                    Generate complete responsive webpages using just a prompt. No images, just smart layouts, vibrant colors, and clean code.
+                    </p>
+                </div>
 
-          </div>
+                <div className="mt-8">
+                    <p className="text-md font-semibold text-gray-300 mb-2">Try asking things like:</p>
+                    <ul className="space-y-2 text-sm text-gray-400">
+                    <li>👉 Create a personal portfolio landing page</li>
+                    <li>👉 Design a responsive pricing table with 3 plans</li>
+                    <li>👉 Build a contact form with clean layout</li>
+                    <li>👉 Create a digital agency one-page website</li>
+                    </ul>
+                </div>
+                </div>
+            )}
+            </div>
 
           {/* Prompt Form */}
           <form
@@ -124,7 +189,7 @@ export default function AssistantPage() {
             </button>
           </form>
         </section>
-
+              
         {/* RIGHT: SidebarCode */}
         {isSidebarOpen && (
           <aside className="w-[40%] h-full overflow-y-auto bg-[#121214] border-l border-gray-800">
@@ -136,6 +201,27 @@ export default function AssistantPage() {
             />
           </aside>
         )}
+
+        {/* ✨ FIX 3: Use the derived constant for clean, reliable rendering */}
+        {isDownloadReady && (
+         <div
+  title={!isDownloadReady ? "Generate code first to enable download." : ""}
+>
+  <button
+    onClick={handleDownload}
+    disabled={!isDownloadReady || isLoading}
+    className={`fixed bottom-6 right-6 z-50 px-6 py-3 rounded-md text-sm font-medium shadow-lg transition-all
+      ${
+        !isDownloadReady || isLoading
+          ? "bg-gray-600 cursor-not-allowed opacity-50"
+          : "bg-green-600 hover:bg-green-500"
+      }`}
+  >
+    ⬇️ Download ZIP
+  </button>
+</div>
+        )}
+
       </main>
     </div>
   );
